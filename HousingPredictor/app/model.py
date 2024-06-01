@@ -4,13 +4,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import LabelEncoder
+import joblib
 
 
 def load_data():
     df = pd.read_csv("HousingPredictor/app/Housing.csv", delimiter=',')
 
     need_encode = ['mainroad', 'guestroom', 'basement', 'hotwaterheating', 'airconditioning', 'parking', 'prefarea', 'furnishingstatus']
-
+    
     le = LabelEncoder()
 
     for col in need_encode:
@@ -57,20 +58,26 @@ def param_tuning(attributes, labels):
             best_overall_params = best_params
             best_overall_preds = xgb_preds
             prices = y_test.array
+            best_size = size
+            best_model = xgb(n_estimators=best_params['n_estimators'], max_depth=best_params['max_depth'], learning_rate=best_params['learning_rate'], objective='reg:squarederror')
 
-    return best_overall_acc, best_overall_preds, prices, best_overall_params
+    return best_overall_acc, best_overall_preds, prices, best_overall_params, best_model, size
 
 
-def main():
-    attributes, labels = load_data()
-    best_acc, predictions, prices, params = param_tuning(attributes, labels)
+# def run_model(attributes, labels):
+#     # Useless function now - Only purpose is holding the best parameters
+#     X_train, X_test, y_train, y_test = train_test_split(attributes, labels, train_size=.85, random_state=42)
+#     model = xgb(n_estimators=20, max_depth=2, learning_rate=0.05, objective='reg:squarederror')
+
+
+def training(attributes, labels):
+    best_acc, predictions, prices, params, model, size = param_tuning(attributes, labels)
+    joblib.dump(model, 'xgb_model.joblib')
     print("Lowest RMSE: ", best_acc)
     print("Best parameters: ", params)
-    # print(predictions)
-    # print(prices)
-    for p in range(len(predictions)):
-        print(f"Prediction: {predictions[p]}\tActual: {prices[p]}\tDifference: {predictions[p] - prices[p]}")
+    print(size)
  
 
 if __name__ == "__main__":
-    main()
+    attributes, labels = load_data()
+    training(attributes, labels)
